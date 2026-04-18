@@ -1,0 +1,49 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0a2647;
+  color: white;
+}
+
+.hero {
+  text-align: center;
+  padding: 100px 20px;
+}
+
+.hero button {
+  padding: 10px 20px;
+  background: orange;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.section {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.grid {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.card {
+  background: #123;
+  padding: 20px;
+  border-radius: 10px;
+  width: 200px;
+}
+
+.steps {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.footer {
+  padding: 20px;
+  text-align: center;
+  opacity: 0.6;
+}
