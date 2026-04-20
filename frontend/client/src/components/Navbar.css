@@ -1,0 +1,122 @@
+/* ── NAVBAR ─────────────────────────────────────────────── */
+.navbar {
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+/* ── LOGO ───────────────────────────────────────────────── */
+.navbar-logo {
+  font-weight: 700;
+  font-size: 20px;
+  color: #0b2a6f;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── CENTER LINKS ───────────────────────────────────────── */
+.navbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #374151;
+  font-weight: 500;
+  font-size: 15px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: #0077ff;
+}
+
+.nav-link.active {
+  color: #0077ff;
+  border-bottom-color: #0077ff;
+}
+
+/* ── BUTTONS ────────────────────────────────────────────── */
+.navbar-buttons {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-login,
+.btn-signup {
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-login {
+  border: 1.5px solid #0077ff;
+  background: transparent;
+  color: #0077ff;
+}
+
+.btn-signup {
+  border: none;
+  background: #0077ff;
+  color: #ffffff;
+}
+
+.btn-login:hover,
+.btn-signup:hover {
+  opacity: 0.85;
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .navbar-center {
+    gap: 16px;
+  }
+
+  .nav-link {
+    font-size: 14px;
+  }
+
+  .btn-login,
+  .btn-signup {
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 520px) {
+  .navbar-inner {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .navbar-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+}

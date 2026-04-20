@@ -1,154 +1,110 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 30);
-    window.addEventListener("scroll", fn);
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
-
-  const links = [
-    { label: "Home", href: "/" },
-    { label: "Explore", href: "#explore" },
-    { label: "Dashboard", href: "#dashboard" },
-    { label: "My Posts", href: "#myposts" },
-  ];
-
-  const pillStyle = {
-    background: "#0e4971",
-    borderRadius: "999px",
-    padding: scrolled ? "10px 20px" : "12px 24px",
-    boxShadow: scrolled
-      ? "0 4px 24px rgba(14,73,113,0.12), 0 1px 4px rgba(0,0,0,0.08)"
-      : "0 2px 12px rgba(14,73,113,0.08)",
-    transition: "all 0.3s ease",
-    border: "1px solid rgba(14,73,113,0.08)",
-  };
+  const linkStyle = ({ isActive }) => ({
+    fontFamily: "'DM Sans', sans-serif",
+    fontSize: "15px",
+    fontWeight: 500,
+    color: isActive ? "#f37e22" : "#0e4971",
+    textDecoration: "none",
+    paddingBottom: "2px",
+    borderBottom: isActive ? "1.5px solid #f37e22" : "1.5px solid transparent",
+    transition: "color 0.2s, border-color 0.2s",
+    whiteSpace: "nowrap",
+  });
 
   return (
-    <header
-      style={{
-        position: "fixed",
-        top: "16px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 1000,
-        width: "calc(100% - 40px)",
-        maxWidth: "1300px",
-      }}
-    >
-      <nav
-        style={{
-          ...pillStyle,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        {/* Logo */}
+    <nav style={{
+      width: "100%",
+      background: "#f8f7f4",
+      borderBottom: "1px solid rgba(14,73,113,0.1)",
+      position: "sticky",
+      top: 0,
+      zIndex: 100,
+    }}>
+      <div style={{
+        maxWidth: "1200px",
+        margin: "0 auto",
+        padding: "18px 40px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "24px",
+      }}>
+
+        {/* LOGO */}
         <div
           onClick={() => navigate("/")}
-          style={{ cursor: "pointer" }}
+          style={{
+            fontFamily: "'DM Serif Display', serif",
+            fontSize: "22px",
+            color: "#0e4971",
+            cursor: "pointer",
+            letterSpacing: "-0.02em",
+            flexShrink: 0,
+            userSelect: "none",
+          }}
         >
-          <span
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "18px",
-              color: "#ebeef1",
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Research<span style={{ color: "#f37e22" }}>AI</span>
-            <sup
-              style={{
-                fontSize: "9px",
-                color: "#5b86a2",
-                marginLeft: "2px",
-                fontFamily: "sans-serif",
-              }}
-            >
-              ENSIA
-            </sup>
-          </span>
+          ResearchAI
         </div>
 
-        {/* Links */}
-        <div style={{ display: "flex", alignItems: "center", gap: "30px" }}>
-          {links.map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: "14px",
-                color: "#f9fbfd",
-                fontWeight: 450,
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-                padding: "6px 10px",
-                borderRadius: "999px",
-              }}
-              onMouseEnter={(e) =>
-                (e.target.style.background = "rgba(14,73,113,0.06)")
-              }
-              onMouseLeave={(e) =>
-                (e.target.style.background = "transparent")
-              }
-            >
-              {l.label}
-            </a>
-          ))}
+        {/* CENTER LINKS */}
+        <div style={{
+          flex: 1,
+          display: "flex",
+          justifyContent: "center",
+          gap: "36px",
+        }}>
+          <NavLink to="/" end style={linkStyle}>Home</NavLink>
+          <NavLink to="/recommendations" style={linkStyle}>Recommendations</NavLink>
+          <NavLink to="/ranking_page" style={linkStyle}>Ranking</NavLink>
         </div>
 
-        {/* Right side */}
-        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+        {/* RIGHT BUTTONS */}
+        <div style={{ display: "flex", gap: "10px", flexShrink: 0 }}>
           <button
+            onClick={() => navigate("/login")}
+            onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
             style={{
               fontFamily: "'DM Sans', sans-serif",
               fontSize: "14px",
-              color: "#f1f1ee",
-              background: "none",
-              border: "none",
+              fontWeight: 500,
+              padding: "9px 20px",
+              borderRadius: "999px",
+              border: "1.5px solid rgba(14,73,113,0.3)",
+              background: "transparent",
+              color: "#0e4971",
               cursor: "pointer",
-              padding: "6px 12px",
-              fontWeight: 450,
+              transition: "opacity 0.2s",
             }}
           >
-            Sign in
+            Log in
           </button>
-
           <button
             onClick={() => navigate("/signup")}
+            onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
             style={{
               fontFamily: "'DM Sans', sans-serif",
               fontSize: "14px",
-              background: "#f37e22",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "999px",
-              padding: "8px 20px",
-              cursor: "pointer",
               fontWeight: 600,
-              transition: "opacity 0.15s, transform 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.opacity = "0.88";
-              e.target.style.transform = "scale(1.03)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.opacity = "1";
-              e.target.style.transform = "scale(1)";
+              padding: "9px 20px",
+              borderRadius: "999px",
+              border: "none",
+              background: "#f37e22",
+              color: "#fff",
+              cursor: "pointer",
+              transition: "opacity 0.2s",
             }}
           >
-            Sign Up
+            Sign up
           </button>
         </div>
-      </nav>
-    </header>
+
+      </div>
+    </nav>
   );
 }

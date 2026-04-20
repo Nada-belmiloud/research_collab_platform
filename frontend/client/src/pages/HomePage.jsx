@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/Header";
+import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 /* ── fonts + global reset ── */
@@ -159,7 +159,7 @@ export default function HomePage() {
   return (
     <>
       
-      <Header />
+      <Navbar />
 
       {/* ═══ HERO ═══ */}
       <section style={{
