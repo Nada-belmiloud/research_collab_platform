@@ -12,7 +12,7 @@ import api from "../api/api";
 
 const Register: React.FC = () => {
   const [step, setStep] = useState(1);
-  const [roleGroup, setRoleGroup] = useState<'STUDENT' | 'TEACHER' | null>(null);
+  const [roleGroup, setRoleGroup] = useState<'Student' | 'Teacher' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -51,7 +51,7 @@ const Register: React.FC = () => {
       setFormData(prev => ({ ...prev, role: 'STUDENT' }));
     } else {
       // Default to PROFESSOR for teacher group, can be changed in step 3
-      setFormData(prev => ({ ...prev, role: 'TEACHER' }));
+      setFormData(prev => ({ ...prev, role: 'PROFESSOR' }));
     }
     setStep(2);
   };
@@ -81,7 +81,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             research_interests: formData.research_interests,
           }
         : {
-            role: formData.role, // ✅ PROFESSOR / DOCTOR / RESEARCHER / MCA
+            role: "TEACHER", // ✅ PROFESSOR / DOCTOR / RESEARCHER / MCA
             experience_years: formData.experience_years,
             grade: formData.grade,
             department: formData.department,
@@ -93,11 +93,15 @@ const handleSubmit = async (e: React.FormEvent) => {
     navigate("/profile");
 
   } catch (err: any) {
-    setError(
-      err?.response?.data?.detail ||
-      err?.message ||
-      "Registration failed"
-    );
+    const detail = err?.response?.data?.detail;
+
+if (Array.isArray(detail)) {
+  setError(detail.map((e: any) => e.msg).join(", "));
+} else if (typeof detail === "string") {
+  setError(detail);
+} else {
+  setError("Registration failed");
+}
   } finally {
     setIsLoading(false);
   }
@@ -383,14 +387,19 @@ const handleSubmit = async (e: React.FormEvent) => {
                       <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-wider text-brand-navy/40 ml-1">Formal Role</label>
                         <select
-                          value={formData.role}
-                          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                          value={formData.grade}
+                          onChange={(e) =>
+  setFormData({
+    ...formData,
+    grade: e.target.value
+  })
+}
                           className="w-full px-4 py-3 bg-brand-navy/5 border border-transparent rounded-xl focus:border-brand-orange focus:bg-white outline-none transition-all font-sans text-sm appearance-none cursor-pointer"
                         >
                           <option value="PROFESSOR">Professor</option>
-                          <option value="DOCTOR">Doctor</option>
-                          <option value="RESEARCHER">Researcher</option>
-                          <option value="MCA">MCA</option>
+<option value="DOCTOR">Doctor</option>
+<option value="RESEARCHER">Researcher</option>
+<option value="MCA">MCA</option>
                         </select>
                       </div>
 

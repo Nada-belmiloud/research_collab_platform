@@ -6,11 +6,12 @@ import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Calendar, User, BookOpen, Target, ChevronLeft, Send, CheckCircle2, AlertCircle, ArrowUpRight } from 'lucide-react';
 
+
 const ProjectDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
@@ -18,39 +19,53 @@ const ProjectDetails: React.FC = () => {
   const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        if (id) {
-          const response = await projectService.getById(id);
-          setProject(response.data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch project', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProject();
-  }, [id]);
-
-  const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    setSubmissionStatus('submitting');
+  const fetchProject = async () => {
     try {
+      console.log("PROJECT ID:", id);
       if (id) {
-        await projectService.apply(id, { coverLetter: applicationText });
-        setSubmissionStatus('success');
-        setTimeout(() => setIsApplying(false), 3000);
+        const response = await projectService.getById(Number(id));
+        setProject(response.data);
       }
+
+      const all = await projectService.getAll();
+      setAllProjects(all.data);
+
     } catch (err) {
-      setSubmissionStatus('error');
+      console.error('Failed to fetch project', err);
+    } finally {
+      setLoading(false);
     }
   };
+
+  fetchProject(); // 🔥 YOU WERE MISSING THIS
+}, [id]);
+
+  const visibleProjects = allProjects.filter(
+  (p) => p.visibility === "PUBLIC" && p.id !== project?.id
+);
+
+  const handleApply = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!id) return;
+
+  setSubmissionStatus('submitting');
+
+  try {
+    await projectService.apply(Number(id), applicationText);
+
+    setSubmissionStatus('success');
+    setTimeout(() => {
+      setIsApplying(false);
+      setSubmissionStatus('idle');
+    }, 2000);
+
+  } catch (err: any) {
+  console.log("FULL ERROR:", err);
+  console.log("BACKEND RESPONSE:", err.response?.data);
+  setSubmissionStatus('error');
+}
+};
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -267,6 +282,25 @@ const ProjectDetails: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <div className="mt-12 bg-white p-10 rounded-[2.5rem] shadow-xl border border-brand-navy/5">
+  <h2 className="text-2xl font-bold mb-6">Other Projects</h2>
+
+  <div className="grid md:grid-cols-2 gap-4">
+    {visibleProjects.map((p) => (
+      <div key={p.id} className="p-4 border rounded-xl hover:border-brand-orange transition">
+        <h3 className="font-bold">{p.title}</h3>
+        <p className="text-xs text-brand-navy/50 line-clamp-2">{p.description}</p>
+
+        <a
+          href={`/projects/${p.id}`}
+          className="text-xs text-brand-orange mt-2 inline-block"
+        >
+          View details →
+        </a>
+      </div>
+    ))}
+  </div>
+</div>
     </div>
   );
 };

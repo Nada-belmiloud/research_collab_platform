@@ -9,6 +9,7 @@ const api = axios.create({
   },
 });
 
+
 // Add a request interceptor for auth tokens
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -34,13 +35,18 @@ export const authService = {
 };
 
 export const projectService = {
-  getAll: () => api.get('/projects'),
-  getById: (id: string) => api.get(`/projects/${id}`),
+  getAll: (params?: any) =>
+  api.get('/projects/', { params }),
+  getById: (id: string) => api.get(`/projects/${id}/`),
   createProject: (data: any) => api.post('/projects/', data),
-  apply: (projectId: string, data: any) =>
-  api.post(`/projects/${projectId}/apply`, data),
+  apply: (projectId: number, motivation: string) =>
+  api.post('/project-applications/', {
+    project_id: projectId,
+    motivation: motivation,
+    applicant_user_id: JSON.parse(localStorage.getItem("user") || "{}")?.id
+  }),
   getMyProjects: () =>
-  api.get('/projects/', {
+   api.get('/projects/', {
     params: {
       skip: 0,
       limit: 100,
@@ -53,10 +59,24 @@ export const teamService = {
 };
 
 export const applicationService = {
-  getMyApplications: () => api.get('/applications/my'),
-  getPendingApplications: () => api.get('/applications/pending'), // for teachers
-  updateStatus: (id: string, status: 'approved' | 'rejected') => 
-    api.patch(`/applications/${id}`, { status }),
+  getMyApplications: () => api.get('/project-applications/mine'),
+
+  getPendingApplications: () => api.get('/project-applications/'),
+
+  getById: (id: string) => api.get(`/project-applications/${id}`),
+
+  create: (data: any) => api.post('/project-applications/', data),
+
+  update: (id: string, data: any) =>
+    api.put(`/project-applications/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete(`/project-applications/${id}`),
+
+  updateStatus: (id: string, status: string) =>
+  api.put(`/project-applications/${id}`, {
+    status,
+  }),
 };
 
 export default api;

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { projectService } from '../services/api';
+import { projectService } from '../services/api.ts';
 import { Project } from '../types';
 import { motion } from 'motion/react';
 import { Search, Filter, Calendar, Tag, ArrowUpRight, GraduationCap } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Projects: React.FC = () => {
+  const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,14 +27,16 @@ const Projects: React.FC = () => {
     fetchProjects();
   }, []);
 
-  const filteredProjects = projects.filter((p) => {
-  return (
-    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.description || '')
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
-});
+  const filteredProjects = projects
+  .filter((p) =>
+    p.visibility === 'PUBLIC' || p.created_by === user?.id
+  )
+  .filter((p) => {
+    return (
+      p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.description || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   return (
     <div className="min-h-screen pb-20 bg-texture pt-12">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { projectService } from '../services/api';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   User as UserIcon, Mail, Briefcase, BookOpen, Settings, LogOut,
@@ -261,7 +262,7 @@ const Profile: React.FC = () => {
         setLoading(true);
         const [profileRes, projectsRes, pubsRes, cvsRes] = await Promise.allSettled([
           authAxios.get<UserProfile>('/auth/me'),
-          authAxios.get<Project[]>('/projects/'),
+          authAxios.get('/projects/?my_projects_only=true'),
           authAxios.get<Publication[]>('/publications/'),
           authAxios.get<StudentCV[]>('/student-cvs/'),
         ]);
@@ -282,7 +283,18 @@ const Profile: React.FC = () => {
           setError('Failed to load profile.');
         }
 
-        if (projectsRes.status === 'fulfilled') setProjects(projectsRes.value.data);
+        if (
+  projectsRes.status === 'fulfilled' &&
+  profileRes.status === 'fulfilled'
+) {
+  const currentUser = profileRes.value.data;
+
+  const myProjects = projectsRes.value.data.filter(
+    (project: Project) => project.created_by === currentUser.id
+  );
+
+  setProjects(myProjects);
+}
         if (pubsRes.status === 'fulfilled') setPublications(pubsRes.value.data);
         if (cvsRes.status === 'fulfilled') setCvList(cvsRes.value.data);
       } catch {
@@ -296,12 +308,16 @@ const Profile: React.FC = () => {
 
   // ── Submit handlers ────────────────────────────────────────────────────────
 
-  const handleAddProject = async () => {
+const handleAddProject = async () => {
+  if (!projectForm.title || !projectForm.description) {
+    showToast('Please fill all required fields.', 'error');
+    return;
+  }
+
   try {
     setSubmitting(true);
 
     const payload = {
-      group_id: 1, // TEMPORARY
       title: projectForm.title,
       description: projectForm.description,
       visibility: projectForm.visibility,
@@ -309,7 +325,11 @@ const Profile: React.FC = () => {
         projectForm.accepting_collaborators,
     };
 
+    console.log("SENDING:", payload);
+
     const response = await projectService.createProject(payload);
+
+    console.log("SUCCESS:", response.data);
 
     setProjects((prev) => [...prev, response.data]);
 
@@ -322,11 +342,17 @@ const Profile: React.FC = () => {
       accepting_collaborators: false,
     });
 
-  } catch (err: any) {
-    console.error(err);
-    alert(
-      err?.response?.data?.detail ||
-      'Failed to create project'
+    showToast('Project created successfully!', 'success');
+
+  } catch (error: any) {
+    console.error('CREATE PROJECT ERROR:', error);
+    console.error('RESPONSE:', error.response?.data);
+
+    showToast(
+      error.response?.data?.detail ||
+      error.response?.data?.message ||
+      'Failed to create project',
+      'error'
     );
   } finally {
     setSubmitting(false);
@@ -347,26 +373,53 @@ const Profile: React.FC = () => {
   };
 
   const handleAddPublication = async () => {
-    if (!publicationForm.title) return;
-    try {
-      setSubmitting(true);
-      const res = await authAxios.post<Publication>('/publications/', {
-        ...publicationForm,
-        citation_count: parseInt(publicationForm.citation_count) || 0,
-        authors: profile ? [{ user_id: profile.id, author_order: 1, is_corresponding: true }] : [],
-        project_id: projects[0]?.id || null,
-      });
-      setPublications((prev) => [res.data, ...prev]);
-      setModal(null);
-      setPublicationForm({ title: '', abstract: '', publication_date: '', venue: '', doi: '', paper_url: '', citation_count: '0' });
-      showToast('Publication added!', 'success');
-    } catch (err: any) {
-      showToast(err?.response?.data?.detail || 'Failed to add publication.', 'error');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  if (!publicationForm.title) return;
 
+  try {
+    setSubmitting(true);
+
+    const res = await authAxios.post<Publication>('/publications/', {
+      ...publicationForm,
+      citation_count: Number(publicationForm.citation_count) || 0,
+      authors: profile
+        ? [
+            {
+              user_id: profile.id,
+              author_order: 1,
+              is_corresponding: true,
+            },
+          ]
+        : [],
+      project_id: projects[0]?.id ?? null,
+    });
+
+    setPublications((prev) => [res.data, ...prev]);
+
+    setModal(null);
+
+    setPublicationForm({
+      title: '',
+      abstract: '',
+      publication_date: '',
+      venue: '',
+      doi: '',
+      paper_url: '',
+      citation_count: '0',
+    });
+
+    showToast('Publication added!', 'success');
+  } catch (err: any) {
+  console.log("FULL ERROR:", err.response?.data);
+
+  const msg =
+    err?.response?.data?.detail ||
+    err?.response?.data?.message ||
+    Object.values(err?.response?.data || {}).join(" ") ||
+    "Signup failed";
+
+  setError(msg);
+}
+};
   const handleDeletePublication = async (id: number) => {
     if (!confirm('Delete this publication?')) return;
     try {
@@ -440,7 +493,11 @@ const Profile: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-brand-cream">
         <div className="bg-white p-10 rounded-[3rem] border border-brand-navy/5 shadow-2xl text-center max-w-md space-y-4">
           <AlertCircle className="w-10 h-10 text-red-400 mx-auto" />
-          <p className="text-red-500 font-medium">{error}</p>
+          <p className="text-red-500 font-medium"><p>
+  {typeof error === 'string'
+    ? error
+    : JSON.stringify(error, null, 2)}
+</p></p>
           <button onClick={() => window.location.reload()} className="px-6 py-3 bg-brand-orange text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all">
             Retry
           </button>

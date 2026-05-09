@@ -29,22 +29,27 @@ const Applications: React.FC = () => {
     fetchApplications();
   }, [user]);
 
-  const handleStatusUpdate = async (id: string, status: 'approved' | 'rejected') => {
-    try {
-      await applicationService.updateStatus(id, status);
-      setApplications(prev => prev.map(app => app.id === id ? { ...app, status } : app));
-    } catch (err) {
-      console.error('Failed to update status', err);
-    }
-  };
+  const handleStatusUpdate = async (
+  id: string,
+  status: 'approved' | 'rejected'
+) => {
+  try {
+    const backendStatus =
+      status === 'approved' ? 'ACCEPTED' : 'REJECTED';
 
-  const getStatusStyles = (status: string) => {
-    switch (status) {
-      case 'approved': return { bg: 'bg-green-50 text-green-700 border-green-200', icon: CheckCircle2, label: 'Approved' };
-      case 'rejected': return { bg: 'bg-red-50 text-red-700 border-red-200', icon: XCircle, label: 'Rejected' };
-      default: return { bg: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock, label: 'Pending Review' };
-    }
-  };
+    await applicationService.update(id, {
+      status: backendStatus,
+    });
+
+    setApplications((prev) =>
+      prev.map((app) =>
+        app.id === id ? { ...app, status: backendStatus } : app
+      )
+    );
+  } catch (err) {
+    console.error('Failed to update status', err);
+  }
+};
 
   return (
     <div className="min-h-screen bg-texture pb-32 pt-12">
