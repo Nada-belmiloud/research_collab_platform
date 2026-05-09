@@ -8,7 +8,7 @@ import {
   ChevronLeft, GraduationCap, School, BookOpen, 
   FileText, FlaskConical, Award, Globe, Upload, CheckCircle2
 } from 'lucide-react';
-import api from "../api/api";
+import api from '../services/api';
 
 const Register: React.FC = () => {
   const [step, setStep] = useState(1);

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { teamService } from '../services/api';
 import { Team } from '../types';
 import { motion } from 'motion/react';
 import { Users, Search, ArrowRight, Tag } from 'lucide-react';
 
 const Teams: React.FC = () => {
+  const navigate = useNavigate();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,7 +65,8 @@ const Teams: React.FC = () => {
                 key={team.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="group bg-white p-10 rounded-[3rem] border border-brand-navy/5 hover:border-brand-orange/30 hover:shadow-2xl transition-all cursor-pointer flex flex-col justify-between"
+                className="group bg-white p-10 rounded-[3rem] border border-brand-navy/5 hover:border-brand-orange/30 hover:shadow-2xl transition-all cursor-pointer flex flex-col justify-between relative"
+                onClick={() => navigate(`/teams/${team.id}`)}
               >
                 <div>
                   <div className="w-14 h-14 bg-brand-navy/5 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-orange group-hover:text-white transition-colors">
@@ -73,24 +76,16 @@ const Teams: React.FC = () => {
                   <p className="text-brand-navy/60 text-sm line-clamp-3 mb-8 font-sans leading-relaxed">
                     {team.description}
                   </p>
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {team.tags.map(tag => (
-                      <span key={tag} className="px-3 py-1 bg-brand-cream border border-brand-navy/5 rounded-full text-[10px] font-bold uppercase tracking-widest text-brand-navy/50">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
                 </div>
 
                 <div className="pt-6 border-t border-brand-navy/5 flex items-center justify-between">
                   <div className="text-xs font-bold text-brand-navy/30 uppercase tracking-widest">
-                    {team.membersCount} Members
+                    {team.members?.length || 0} Members
                   </div>
-                  <button className="flex items-center space-x-2 text-brand-navy hover:text-brand-orange font-bold text-xs group/btn">
+                  <div className="flex items-center space-x-2 text-brand-navy hover:text-brand-orange font-bold text-xs group/btn">
                     <span>View Team</span>
                     <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </button>
+                  </div>
                 </div>
               </motion.div>
             ))}

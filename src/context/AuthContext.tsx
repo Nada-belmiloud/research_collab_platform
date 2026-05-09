@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
-import api from "../api/api";
+import api from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -16,52 +16,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const getMe = async () => {
-    const res = await api.get("/auth/me");
-    return res.data;
+  const fetchUser = async () => {
+    try {
+      const res = await api.get("/auth/me");
+      setUser(res.data);
+    } catch (err) {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      getMe()
-        .then(user => setUser(user))
-        .catch(() => logout())
-        .finally(() => setLoading(false)); // ✅ only set false AFTER getMe resolves
-    } else {
-      setLoading(false); // ✅ no token = no need to wait
-    }
+    fetchUser();
   }, []);
 
   const login = async ({ email, password }: any) => {
     const res = await api.post("/auth/login", { email, password });
-
-    const token =
-      res.data.access_token ||
-      res.data.token ||
-      res.data.accessToken;
-
-    if (!token) throw new Error("No token returned from backend");
-
-    localStorage.setItem("token", token);
-
-    const user = await getMe();
-    setUser(user);
-    localStorage.setItem("user", JSON.stringify(user));
+    // User data is returned, and cookies are set by the browser automatically
+    setUser(res.data);
   };
 
   const register = async (data: any) => {
-    await api.post("/auth/signup", {
+    const res = await api.post("/auth/signup", {
       email: data.email,
       full_name: data.full_name,
       password: data.password,
     });
+    // User data is returned, and cookies are set by the browser automatically
+    setUser(res.data);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await api.delete('/auth/logout');
+    } catch (err) {
+      console.error('Logout failed', err);
+    } finally {
+      setUser(null);
+      // Cookies are cleared by the backend response
+    }
   };
 
   return (

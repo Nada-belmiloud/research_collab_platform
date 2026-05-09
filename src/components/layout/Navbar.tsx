@@ -11,15 +11,16 @@ const Navbar: React.FC = () => {
   const beforeLoginLinks = [
     { name: 'Home', path: '/' },
     { name: 'Teams', path: '/teams' },
+    { name: 'Research Labs', path: '/labs' },
     { name: 'About', path: '/about' },
   ];
 
   const afterLoginLinks = [
     { name: 'Home', path: '/' },
     { name: 'Teams', path: '/teams' },
+    { name: 'Research Labs', path: '/labs' },
     { name: 'Projects', path: '/projects' },
     { name: 'My Applications', path: '/applications' },
-    { name: 'Profile', path: '/profile' },
   ];
 
   const navLinks = user ? afterLoginLinks : beforeLoginLinks;
@@ -44,15 +45,14 @@ const Navbar: React.FC = () => {
                 key={link.path}
                 to={link.path}
                 className={({ isActive }) =>
-                  `text-sm font-medium transition-colors hover:text-brand-orange ${
-                    isActive ? 'text-brand-orange border-b-2 border-brand-orange' : 'text-brand-navy/70'
+                  `text-sm font-medium transition-colors hover:text-brand-orange ${isActive ? 'text-brand-orange border-b-2 border-brand-orange' : 'text-brand-navy/70'
                   }`
                 }
               >
                 {link.name}
               </NavLink>
             ))}
-            
+
             <div className="flex items-center space-x-4 pl-4 border-l border-brand-navy/10">
               {user ? (
                 <>

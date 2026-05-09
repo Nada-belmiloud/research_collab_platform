@@ -7,17 +7,10 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Crucial for cookie-based auth
 });
 
-
-// Add a request interceptor for auth tokens
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// Request interceptor removed as we now rely on HttpOnly cookies
 
 export const authService = {
   login: (data: any) => api.post('/auth/login', data),
@@ -35,48 +28,74 @@ export const authService = {
 };
 
 export const projectService = {
-  getAll: (params?: any) =>
+  getAll: (params?: { skip?: number, limit?: number, group_id?: number, lab_id?: number, search?: string, status?: string }) =>
   api.get('/projects/', { params }),
-  getById: (id: string) => api.get(`/projects/${id}/`),
+  getById: (id: number | string) => api.get(`/projects/${id}/`),
   createProject: (data: any) => api.post('/projects/', data),
-  apply: (projectId: number, motivation: string) =>
-  api.post('/project-applications/', {
-    project_id: projectId,
-    motivation: motivation,
-    applicant_user_id: JSON.parse(localStorage.getItem("user") || "{}")?.id
-  }),
-  getMyProjects: () =>
-   api.get('/projects/', {
-    params: {
-      skip: 0,
-      limit: 100,
-    }
-  })
+  updateProject: (id: number, data: any) => api.put(`/projects/${id}`, data),
+  deleteProject: (id: number) => api.delete(`/projects/${id}`),
+  apply: (projectId: number, cover_letter: string) =>
+    api.post('/project-applications/', {
+      project_id: projectId,
+      cover_letter: cover_letter,
+    }),
+  getMyProjects: () => api.get('/projects/', { params: { my_projects_only: true } })
+};
+
+export const userService = {
+  updateProfile: (id: number, data: any) => api.put(`/users/${id}`, data),
+  updateProfilePicture: (data: FormData) => api.put('/users/profile-picture', data),
+};
+
+export const cvService = {
+  getAll: () => api.get('/student-cvs/'),
+  upload: (data: FormData) => api.post('/student-cvs/', data),
+  delete: (id: number) => api.delete(`/student-cvs/${id}`),
+};
+
+export const groupService = {
+  getAll: () => api.get('/groups/validated'),
+  getById: (id: number | string) => api.get(`/groups/${id}`),
+};
+
+export const publicationService = {
+  getAll: () => api.get('/publications/'),
+  create: (data: any) => api.post('/publications/', data),
+  delete: (id: number) => api.delete(`/publications/${id}`),
 };
 
 export const teamService = {
-  getTeams: () => api.get('/teams'),
+  getTeams: () => api.get('/groups/validated'),
 };
 
 export const applicationService = {
   getMyApplications: () => api.get('/project-applications/mine'),
-
   getPendingApplications: () => api.get('/project-applications/'),
-
-  getById: (id: string) => api.get(`/project-applications/${id}`),
-
+  getById: (id: number | string) => api.get(`/project-applications/${id}`),
   create: (data: any) => api.post('/project-applications/', data),
+  update: (id: number | string, data: any) => api.put(`/project-applications/${id}`, data),
+  delete: (id: number | string) => api.delete(`/project-applications/${id}`),
+  updateStatus: (id: number | string, status: string) => api.put(`/project-applications/${id}`, { status }),
+};
 
-  update: (id: string, data: any) =>
-    api.put(`/project-applications/${id}`, data),
+export const landingPageService = {
+  getLandingData: () => api.get('/landing-page'),
+};
 
-  delete: (id: string) =>
-    api.delete(`/project-applications/${id}`),
+export const taskService = {
+  getProjectTasks: (projectId: number) => api.get('/tasks/', { params: { project_id: projectId } }),
+  createTask: (data: any) => api.post('/tasks/', data),
+  updateTask: (id: number, data: any) => api.put(`/tasks/${id}`, data),
+  deleteTask: (id: number) => api.delete(`/tasks/${id}`),
+};
 
-  updateStatus: (id: string, status: string) =>
-  api.put(`/project-applications/${id}`, {
-    status,
-  }),
+export const participantService = {
+  getProjectParticipants: (projectId: number) => api.get('/project-participants/', { params: { project_id: projectId } }),
+};
+
+export const labService = {
+  getAll: (skip?: number, limit?: number) => api.get('/labs/', { params: { skip, limit } }),
+  getById: (id: number) => api.get(`/labs/${id}`),
 };
 
 export default api;

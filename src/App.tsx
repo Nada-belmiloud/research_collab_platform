@@ -15,7 +15,10 @@ import ProjectDetails from './pages/ProjectDetails';
 import Applications from './pages/Applications';
 import Profile from './pages/Profile';
 import Teams from './pages/Teams';
+import GroupDetails from './pages/GroupDetails';
 import About from './pages/About';
+import Labs from './pages/Labs';
+import LabDetails from './pages/LabDetails';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -39,7 +42,10 @@ const AppContent: React.FC = () => {
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:id" element={<ProjectDetails />} />
             <Route path="/teams" element={<Teams />} />
+            <Route path="/teams/:id" element={<GroupDetails />} />
             <Route path="/about" element={<About />} />
+            <Route path="/labs" element={<Labs />} />
+            <Route path="/labs/:id" element={<LabDetails />} />
             <Route 
               path="/applications" 
               element={

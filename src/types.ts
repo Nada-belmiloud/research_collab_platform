@@ -1,15 +1,26 @@
 export interface User {
-  id: string;
+  id: number;
   full_name: string;
   email: string;
-  role: 'STUDENT' | 'PROFESSOR' | 'DOCTOR' | 'RESEARCHER' | 'MCA';
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'PARTNER';
   institution?: string;
+  department?: string;
+  profile_picture_url?: string;
   bio?: string;
+  created_at: string;
+  phone_number?: string;
+  address?: string;
+  website?: string;
+  contact_email?: string;
 }
 
+export type UserProfile = User;
+
 export interface StudentProfile {
+  id: number;
+  user_id: number;
   university: string;
-  level: 'UNDERGRADUATE' | 'GRADUATE' | 'PHD';
+  level: 'PHD' | 'MASTERS' | 'BACHELORS' | 'POSTDOC';
   major: string;
   bio: string;
   experience: string;
@@ -18,7 +29,11 @@ export interface StudentProfile {
   cv_url?: string;
 }
 
+export type StudentCV = StudentProfile;
+
 export interface TeacherProfile {
+  id: number;
+  user_id: number;
   experience_years: number;
   grade: string;
   department: string;
@@ -26,42 +41,106 @@ export interface TeacherProfile {
 }
 
 export interface Project {
-  id: string;
+  id: number;
   title: string;
   description: string;
-  teacherId: string;
-  teacherName: string;
-  field: string;
-  requirements: string[];
-  deadline: string;
-  status: 'open' | 'closed';
-  type: 'research' | 'internship' | 'thesis';
+  created_by: number;
+  created_by_name?: string;
+  group_id: number | null;
+  visibility: 'PUBLIC' | 'PRIVATE';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  accepting_collaborators: boolean;
+  created_at: string;
+  deadline?: string;
+  group_name?: string;
+  decision_note?: string;
 }
 
 export interface Application {
-  id: string;
-  projectId: string;
-  projectTitle: string;
-  studentId: string;
-  studentName: string;
-  status: 'pending' | 'approved' | 'rejected';
-  appliedAt: string;
-  coverLetter: string;
+  id: number;
+  project_id: number;
+  applicant_user_id: number;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  created_at: string;
+  cover_letter: string;
+  reviewed_by?: number;
+  decision_note?: string;
+  // Computed fields for UI convenience
+  projectTitle?: string;
+  studentName?: string;
+}
+
+export interface Publication {
+  id: number;
+  title: string;
+  abstract: string;
+  publication_date: string;
+  venue: string;
+  doi?: string;
+  paper_url?: string;
+  citation_count: number;
+  created_at: string;
 }
 
 export interface CollaborationCall {
-  id: string;
+  id: number;
   title: string;
   description: string;
-  organizer: string;
-  tags: string[];
-  date: string;
+  created_by: number;
+  created_at: string;
+}
+
+export interface GroupMember {
+  group_id: number;
+  user_id: number;
+  is_active: boolean;
+  joined_at: string;
+  user_name?: string;
+  user_email?: string;
 }
 
 export interface Team {
-  id: string;
+  id: number;
   name: string;
   description: string;
-  membersCount: number;
-  tags: string[];
+  created_at: string;
+  projects?: Project[];
+  members?: GroupMember[];
+}
+
+export interface ResearchLab {
+  id: number;
+  name: string;
+  description: string;
+  location?: string;
+  website_url?: string;
+  created_at: string;
+  groups?: Team[];
+}
+
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE' | 'CANCELLED';
+export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+export interface Task {
+  id: number;
+  project_id: number;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  created_by?: number;
+  assignee_user_id?: number;
+  assignee_name?: string;
+  due_date?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ProjectParticipant {
+  id: number;
+  project_id: number;
+  user_id: number;
+  user_name?: string;
+  participant_role: 'LEAD' | 'MEMBER' | 'REVIEWER';
+  joined_at: string;
 }
