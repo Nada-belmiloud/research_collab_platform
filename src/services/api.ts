@@ -12,6 +12,18 @@ const api = axios.create({
 
 // Request interceptor removed as we now rely on HttpOnly cookies
 
+api.interceptors.request.use((config) => {
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("access_token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
 export const authService = {
   login: (data: any) => api.post('/auth/login', data),
   signup: (data: any) => api.post('/auth/signup', data),
@@ -65,7 +77,13 @@ export const publicationService = {
 };
 
 export const teamService = {
-  getTeams: () => api.get('/groups/validated'),
+  getTeams: () => api.get('/teams/'),
+
+  getTeamById: (id: number) =>
+    api.get(`/teams/${id}/summary`),
+
+  createTeam: (data: any) =>
+    api.post('/teams/', data),
 };
 
 export const applicationService = {
