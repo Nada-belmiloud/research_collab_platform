@@ -30,7 +30,7 @@ export const authService = {
 export const projectService = {
   getAll: (params?: { skip?: number, limit?: number, group_id?: number, lab_id?: number, search?: string, status?: string }) =>
   api.get('/projects/', { params }),
-  getById: (id: number | string) => api.get(`/projects/${id}/`),
+  getById: (id: number | string) => api.get(`/projects/${id}`),
   createProject: (data: any) => api.post('/projects/', data),
   updateProject: (id: number, data: any) => api.put(`/projects/${id}`, data),
   deleteProject: (id: number) => api.delete(`/projects/${id}`),

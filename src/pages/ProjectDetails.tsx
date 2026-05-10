@@ -73,21 +73,37 @@ const ProjectDetails: React.FC = () => {
   }, [id, user]);
 
   const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id) return;
-    setSubmissionStatus('submitting');
-    try {
-      await projectService.apply(Number(id), applicationText);
-      setSubmissionStatus('success');
-      setTimeout(() => {
-        setIsApplying(false);
-        setSubmissionStatus('idle');
-        setApplicationText('');
-      }, 2000);
-    } catch (err: any) {
-      setSubmissionStatus('error');
-    }
-  };
+    if (!user) {
+    navigate('/login');  // redirect to login first
+    return;
+  }
+  setIsApplying(true);
+};
+
+const handleApplyClick = () => {
+  if (!user) {
+    navigate('/login');
+    return;
+  }
+  setIsApplying(true);
+};
+
+const handleSubmitApplication = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!id) return;
+  setSubmissionStatus('submitting');
+  try {
+    await projectService.apply(Number(id), applicationText);
+    setSubmissionStatus('success');
+    setTimeout(() => {
+      setIsApplying(false);
+      setSubmissionStatus('idle');
+      setApplicationText('');
+    }, 2000);
+  } catch (err) {
+    setSubmissionStatus('error');
+  }
+};
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -365,7 +381,7 @@ const ProjectDetails: React.FC = () => {
                   Join the mission to advance this research. Apply now with your CV and a brief statement of interest.
                 </p>
                 <button 
-                  onClick={() => setIsApplying(true)}
+                  onClick={handleApply}
                   disabled={!project.accepting_collaborators}
                   className={`w-full py-5 rounded-2xl font-bold text-sm transition-all shadow-xl flex items-center justify-center space-x-2 ${
                     project.accepting_collaborators 
