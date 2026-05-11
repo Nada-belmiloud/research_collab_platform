@@ -10,6 +10,17 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Logic for unauthorized access (e.g., redirect to login)
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const authService = {
   login: (data: any) => api.post('/auth/login', data),
   signup: (data: any) => api.post('/auth/signup', data),
@@ -32,6 +43,9 @@ export const projectService = {
   create: (data: any) => api.post('/projects/', data),
   update: (id: number, data: any) => api.put(`/projects/${id}`, data),
   delete: (id: number) => api.delete(`/projects/${id}`),
+  // Aliases for compatibility
+  createProject: (data: any) => api.post('/projects/', data),
+  deleteProject: (id: number) => api.delete(`/projects/${id}`),
   apply: (projectId: number, motivation: string) =>
     api.post('/project-applications/', {
       project_id: projectId,
@@ -72,7 +86,9 @@ export const publicationService = {
 };
 
 export const teamService = {
-  getTeams: () => api.get('/groups/validated'),
+  getTeams: () => api.get('/teams/'),
+  getTeamById: (id: number) => api.get(`/teams/${id}/summary`),
+  createTeam: (data: any) => api.post('/teams/', data),
 };
 
 export const applicationService = {

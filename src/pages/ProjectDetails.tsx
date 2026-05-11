@@ -29,7 +29,7 @@ const ProjectDetails: React.FC = () => {
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [applicationText, setApplicationText] = useState('');
-  const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'MEDIUM', assignee_user_id: '' });
+  const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'MEDIUM' as const, assignee_user_id: '' });
   const [submitting, setSubmitting] = useState(false);
 
   if (loading) return (
@@ -66,7 +66,7 @@ const ProjectDetails: React.FC = () => {
               <div className="flex flex-wrap gap-6 mt-6">
                 <div className="flex items-center text-white/40 text-xs font-bold uppercase tracking-wider">
                   <Calendar size={14} className="mr-2 text-brand-orange" />
-                  {new Date(project.deadline).toLocaleDateString()}
+                  {new Date(project.created_at).toLocaleDateString()}
                 </div>
                 <div className="flex items-center text-white/40 text-xs font-bold uppercase tracking-wider">
                   <Users size={14} className="mr-2 text-brand-orange" />
@@ -174,7 +174,7 @@ const ProjectDetails: React.FC = () => {
                   <div key={p.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-none">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center font-bold text-brand-orange text-xs">
-                        {p.user?.full_name?.charAt(0)}
+                        {p.user?.full_name?.charAt(0) || 'U'}
                       </div>
                       <div>
                         <p className="text-xs font-bold">{p.user?.full_name}</p>
@@ -209,7 +209,7 @@ const ProjectDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* Modals Refined */}
+      {/* Modals */}
       <Modal isOpen={isApplying} onClose={() => setIsApplying(false)} title="Join Research Team">
         <div className="space-y-6">
           <Input 
@@ -240,7 +240,7 @@ const ProjectDetails: React.FC = () => {
           <Input label="Title" value={taskForm.title} onChange={(e) => setTaskForm({...taskForm, title: e.target.value})} />
           <Input label="Description" textarea value={taskForm.description} onChange={(e) => setTaskForm({...taskForm, description: e.target.value})} />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Priority" select options={[{ value: 'LOW', label: 'Low' }, { value: 'MEDIUM', label: 'Med' }, { value: 'HIGH', label: 'High' }]} value={taskForm.priority} onChange={(e) => setTaskForm({...taskForm, priority: e.target.value})} />
+            <Input label="Priority" select options={[{ value: 'LOW', label: 'Low' }, { value: 'MEDIUM', label: 'Med' }, { value: 'HIGH', label: 'High' }]} value={taskForm.priority} onChange={(e) => setTaskForm({...taskForm, priority: e.target.value as any})} />
             <Input label="Assignee" select options={[{ value: '', label: 'None' }, ...participants.map(p => ({ value: p.user_id.toString(), label: p.user?.full_name || 'User' }))]} value={taskForm.assignee_user_id} onChange={(e) => setTaskForm({...taskForm, assignee_user_id: e.target.value})} />
           </div>
           <Button onClick={async () => { setSubmitting(true); const res = await handleAddTask(taskForm); if (res.success) setShowAddTaskModal(false); setSubmitting(false); }} className="w-full" isLoading={submitting}>Create Milestone</Button>
@@ -260,9 +260,6 @@ const ProjectDetails: React.FC = () => {
             </label>
           </div>
           <Input label="Visibility" select options={[{ value: 'PUBLIC', label: 'Public' }, { value: 'PRIVATE', label: 'Private' }]} value={project.visibility} onChange={(e) => handleUpdateProject({ visibility: e.target.value })} />
-          <div className="pt-4 border-t border-brand-navy/5">
-            <button onClick={() => { if (window.confirm('Archive?')) handleUpdateProject({ status: 'REJECTED' }); }} className="w-full py-3 text-red-500 text-xs font-bold hover:bg-red-50 rounded-xl transition-all">Archive Project</button>
-          </div>
         </div>
       </Modal>
     </div>

@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   User as UserIcon, BookOpen, Settings, Terminal, 
-  FileText, Check, AlertCircle, BookMarked 
+  FileText, BookMarked 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useProfile } from '../hooks/useProfile';
 import Button from '../components/ui/Button';
-import Modal from '../components/ui/Modal';
-import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
 
 // Modular Components
@@ -27,29 +25,20 @@ const Profile: React.FC = () => {
   const navigate = useNavigate();
   const {
     profile, projects, publications, cvList,
-    loading, error, handleUpdateProfile, handleAddProject,
-    handleDeleteProject, handleAddPublication, handleDeletePublication,
-    handleUploadCV, handleDeleteCV, logout: authLogout
+    loading, error, handleUpdateProfile, 
+    handleDeleteProject, handleDeletePublication,
+    handleDeleteCV, logout: authLogout
   } = useProfile();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [modal, setModal] = useState<ModalType>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [settingsTab, setSettingsTab] = useState<'profile' | 'notifications' | 'privacy' | 'appearance'>('profile');
 
-  // Form states
-  const [projectForm, setProjectForm] = useState({ title: '', description: '', visibility: 'PUBLIC', accepting_collaborators: true, deadline: '' });
-  const [publicationForm, setPublicationForm] = useState({ title: '', abstract: '', publication_date: '', venue: '', doi: '', paper_url: '', citation_count: '0' });
-  const [cvForm, setCvForm] = useState({ title: '', university: '', level: 'PHD', major: '', bio: '', experience: '', research_interests: '', skills: '', cv_url: '' });
-  const [settingsForm, setSettingsForm] = useState({ full_name: profile?.full_name || '', institution: profile?.institution || '', department: profile?.department || '', phone_number: '', address: '', website: '', contact_email: '' });
-
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+  const handleLogout = () => {
+    authLogout();
+    navigate('/login');
   };
-
-  const handleLogout = () => { authLogout(); navigate('/login'); };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-brand-cream">
@@ -60,7 +49,6 @@ const Profile: React.FC = () => {
   if (error || !profile) return (
     <div className="min-h-screen flex items-center justify-center bg-brand-cream p-6">
       <div className="text-center space-y-4">
-        <AlertCircle size={32} className="text-red-500 mx-auto" />
         <h2 className="text-lg font-bold text-brand-navy">Connection lost</h2>
         <Button onClick={() => window.location.reload()} size="sm">Retry</Button>
       </div>
@@ -99,7 +87,9 @@ const Profile: React.FC = () => {
               <h1 className="text-3xl font-bold text-brand-navy tracking-tight">
                 Dashboard<span className="text-brand-orange">.</span>
               </h1>
-              <p className="text-xs text-brand-navy/40 font-sans mt-1">{profile.institution} · {profile.department || 'Research Cluster'}</p>
+              <p className="text-xs text-brand-navy/40 font-sans mt-1">
+                {profile.institution || 'Independent Researcher'} · {profile.department || 'Research Cluster'}
+              </p>
             </header>
 
             <nav className="flex items-center space-x-1.5 overflow-x-auto pb-1 scrollbar-hide">
@@ -123,56 +113,60 @@ const Profile: React.FC = () => {
             </nav>
 
             <AnimatePresence mode="wait">
-              <motion.div key={activeTab} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}>
-                {activeTab === 'overview' && <OverviewTab profile={profile} projects={projects} publications={publications} onViewAllProjects={() => setActiveTab('projects')} onViewAllPublications={() => setActiveTab('publications')} />}
-                {activeTab === 'projects' && <ProjectsTab projects={projects} onAddProject={() => setModal('project')} onDeleteProject={handleDeleteProject} />}
-                {activeTab === 'publications' && <PublicationsTab publications={publications} onAddPublication={() => setModal('publication')} onDeletePublication={handleDeletePublication} />}
-                {activeTab === 'cv' && <CVTab cvList={cvList} onUploadCV={() => setModal('cv')} onDeleteCV={handleDeleteCV} />}
-                {activeTab === 'settings' && <SettingsTab settingsTab={settingsTab} setSettingsTab={setSettingsTab} settingsForm={settingsForm} setSettingsForm={setSettingsForm} onSave={async () => { setSubmitting(true); const res = await handleUpdateProfile(settingsForm); if (res.success) showToast('Profile updated!', 'success'); setSubmitting(false); }} submitting={submitting} />}
+              <motion.div 
+                key={activeTab} 
+                initial={{ opacity: 0, y: 5 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -5 }}
+              >
+                {activeTab === 'overview' && (
+                  <OverviewTab 
+                    profile={profile} 
+                    projects={projects} 
+                    publications={publications} 
+                    onViewAllProjects={() => setActiveTab('projects')} 
+                    onViewAllPublications={() => setActiveTab('publications')} 
+                  />
+                )}
+                {activeTab === 'projects' && (
+                  <ProjectsTab 
+                    projects={projects} 
+                    onAddProject={() => setModal('project')} 
+                    onDeleteProject={handleDeleteProject} 
+                  />
+                )}
+                {activeTab === 'publications' && (
+                  <PublicationsTab 
+                    publications={publications} 
+                    onAddPublication={() => setModal('publication')} 
+                    onDeletePublication={handleDeletePublication} 
+                  />
+                )}
+                {activeTab === 'cv' && (
+                  <CVTab 
+                    cvList={cvList} 
+                    onUploadCV={() => setModal('cv')} 
+                    onDeleteCV={handleDeleteCV} 
+                  />
+                )}
+                {activeTab === 'settings' && (
+                  <SettingsTab 
+                    settingsTab={settingsTab} 
+                    setSettingsTab={setSettingsTab} 
+                    onSave={async (data) => {
+                      setSubmitting(true);
+                      await handleUpdateProfile(data);
+                      setSubmitting(false);
+                    }}
+                    submitting={submitting}
+                    initialData={profile}
+                  />
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
         </div>
       </div>
-
-      {/* Modals Refined */}
-      <Modal isOpen={modal === 'project'} onClose={() => setModal(null)} title="New Project" maxWidth="max-w-md">
-        <div className="space-y-4">
-          <Input label="Title" value={projectForm.title} onChange={(e) => setProjectForm({...projectForm, title: e.target.value})} />
-          <Input label="Description" value={projectForm.description} textarea onChange={(e) => setProjectForm({...projectForm, description: e.target.value})} />
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Visibility" select options={[{value: 'PUBLIC', label: 'Public'}, {value: 'PRIVATE', label: 'Private'}]} value={projectForm.visibility} onChange={(e) => setProjectForm({...projectForm, visibility: e.target.value})} />
-            <Input label="Deadline" type="date" value={projectForm.deadline} onChange={(e) => setProjectForm({...projectForm, deadline: e.target.value})} />
-          </div>
-          <Button className="w-full" isLoading={submitting} onClick={async () => { setSubmitting(true); const res = await handleAddProject(projectForm); if (res.success) { showToast('Project created!', 'success'); setModal(null); } setSubmitting(false); }}>Create</Button>
-        </div>
-      </Modal>
-
-      <Modal isOpen={modal === 'publication'} onClose={() => setModal(null)} title="Add Publication" maxWidth="max-w-md">
-        <div className="space-y-4">
-          <Input label="Title" value={publicationForm.title} onChange={(e) => setPublicationForm({...publicationForm, title: e.target.value})} />
-          <Input label="Abstract" value={publicationForm.abstract} textarea onChange={(e) => setPublicationForm({...publicationForm, abstract: e.target.value})} />
-          <Button className="w-full" isLoading={submitting} onClick={async () => { setSubmitting(true); const res = await handleAddPublication(publicationForm); if (res.success) { showToast('Added!', 'success'); setModal(null); } setSubmitting(false); }}>Submit</Button>
-        </div>
-      </Modal>
-
-      <Modal isOpen={modal === 'cv'} onClose={() => setModal(null)} title="Upload CV" maxWidth="max-w-md">
-        <div className="space-y-4">
-          <Input label="Title" value={cvForm.title} onChange={(e) => setCvForm({...cvForm, title: e.target.value})} />
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="University" value={cvForm.university} onChange={(e) => setCvForm({...cvForm, university: e.target.value})} />
-            <Input label="Level" select options={[{value: 'PHD', label: 'PhD'}, {value: 'MASTERS', label: 'Masters'}, {value: 'POSTDOC', label: 'Postdoc'}]} value={cvForm.level} onChange={(e) => setCvForm({...cvForm, level: e.target.value})} />
-          </div>
-          <Button className="w-full" isLoading={submitting} onClick={async () => { setSubmitting(true); const res = await handleUploadCV(cvForm); if (res.success) { showToast('Uploaded!', 'success'); setModal(null); } setSubmitting(false); }}>Upload</Button>
-        </div>
-      </Modal>
-
-      {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-xl text-white text-xs font-bold ${toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
-          {toast.type === 'success' ? <Check size={14} /> : <AlertCircle size={14} />}
-          {toast.message}
-        </div>
-      )}
     </div>
   );
 };

@@ -2,33 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { applicationService } from '../services/api';
 import { Application } from '../types';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'motion/react';
 import { CheckCircle2, Clock, XCircle, FileText, ArrowRight, User, Terminal } from 'lucide-react';
 
 const Applications: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
     const fetchApplications = async () => {
+      if (!user) return;
       try {
-        if (user?.role === 'TEACHER') {
-          const response = await applicationService.getPendingApplications();
-          setApplications(response.data);
-        } else {
-          const response = await applicationService.getMyApplications();
-          setApplications(response.data);
-        }
+        const response = user.role === 'TEACHER'
+          ? await applicationService.getPendingApplications()
+          : await applicationService.getMyApplications();
+        setApplications(response.data);
       } catch (err) {
         console.error('Failed to fetch applications', err);
       } finally {
         setLoading(false);
       }
     };
-    if (user) fetchApplications();
-  }, [user]);
+    if (!authLoading && user) fetchApplications();
+  }, [user, authLoading]);
 
   const handleStatusUpdate = async (
     id: number,
@@ -102,7 +109,7 @@ const Applications: React.FC = () => {
                       </div>
 
                       <h3 className="text-2xl font-serif mb-2 group-hover:text-brand-orange transition-colors">
-                        {app.projectTitle || `Project #${app.project_id}`}
+                        {app.project_title || app.project?.title || `Project #${app.project_id}`}
                       </h3>
                       <div className="flex items-center text-sm text-brand-navy/60 font-sans mb-4">
                         <User className="w-4 h-4 mr-2 text-brand-navy/30" />

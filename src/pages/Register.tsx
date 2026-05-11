@@ -75,18 +75,18 @@ const handleSubmit = async (e: React.FormEvent) => {
     });
 
     const completePayload =
-      roleGroup === "STUDENT"
-        ? {
-            role: "STUDENT",
-            research_interests: formData.research_interests,
-          }
-        : {
-            role: "TEACHER", // ✅ PROFESSOR / DOCTOR / RESEARCHER / MCA
-            experience_years: formData.experience_years,
-            grade: formData.grade,
-            department: formData.department,
-            research_interests: formData.research_interests,
-          };
+    roleGroup === "STUDENT"
+    ? {
+        role: "STUDENT",
+        research_interests: formData.research_interests,
+      }
+    : {
+        role: formData.grade,
+        experience_years: formData.experience_years,
+        grade: formData.grade,
+        department: formData.department,
+        research_interests: formData.research_interests,
+      };
 
     await api.patch("/auth/complete-registration", completePayload);
 
