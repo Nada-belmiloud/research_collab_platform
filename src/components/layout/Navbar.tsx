@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Search, Bell, User as UserIcon, LogOut, Menu, X } from 'lucide-react';
+import { Search, User as UserIcon, LogOut, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import NotificationCenter from '../notifications/NotificationCenter';
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -56,6 +57,7 @@ const Navbar: React.FC = () => {
             <div className="flex items-center space-x-4 pl-4 border-l border-brand-navy/10">
               {user ? (
                 <>
+                  <NotificationCenter />
                   <div className="relative group">
                     <button className="flex items-center space-x-2 bg-brand-navy/5 px-3 py-1.5 rounded-full hover:bg-brand-navy/10 transition-all">
                       <UserIcon className="w-4 h-4 text-brand-navy" />
@@ -64,6 +66,14 @@ const Navbar: React.FC = () => {
                     <div className="absolute right-0 mt-2 w-48 bg-white border border-brand-navy/10 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-1">
                       <Link to="/profile" className="block px-4 py-2 text-sm text-brand-navy hover:bg-brand-cream">
                         Profile
+                      </Link>
+                      {user.role === 'ADMIN' && (
+                        <Link to="/admin" className="block px-4 py-2 text-sm font-bold text-brand-orange hover:bg-brand-orange/5">
+                          Admin Dashboard
+                        </Link>
+                      )}
+                      <Link to="/settings" className="block px-4 py-2 text-sm text-brand-navy hover:bg-brand-cream">
+                        Settings
                       </Link>
                       <button
                         onClick={logout}

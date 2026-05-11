@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { teamService } from '../services/api';
 import { Team } from '../types';
-import { motion } from 'motion/react';
-import { Users, Search, ArrowRight, Tag } from 'lucide-react';
+import { Users, Search, ArrowRight } from 'lucide-react';
+
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import Badge from '../components/ui/Badge';
 
 const Teams: React.FC = () => {
   const navigate = useNavigate();
@@ -31,71 +35,68 @@ const Teams: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-texture pb-32 pt-12">
-      <div className="max-w-7xl mx-auto px-6">
-        <header className="mb-16">
-          <h1 className="text-5xl md:text-7xl font-sans font-bold text-brand-navy mb-6">Research <br /><span className="italic leading-none font-normal">Teams</span></h1>
-          <p className="text-xl text-brand-navy/60 font-sans max-w-2xl font-light">
-            Connect with existing research groups or find partners for your next breakthrough project.
+    <div className="min-h-screen bg-texture pb-20 pt-12">
+      <div className="max-w-6xl mx-auto px-6">
+        <header className="mb-12">
+          <h1 className="text-4xl font-bold text-brand-navy tracking-tight">
+            Research <span className="italic text-brand-orange font-normal text-3xl">Teams</span>
+          </h1>
+          <p className="text-sm md:text-base text-brand-navy/60 font-sans max-w-xl mt-2 leading-relaxed font-light">
+            Connect with specialized groups leading innovation across the ENSIA network.
           </p>
         </header>
 
-        <div className="relative mb-12 max-w-2xl">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-navy/30" />
-          <input
-            type="text"
-            placeholder="Search teams by name or specialization..."
+        <div className="mb-10">
+          <Input
+            label="Search Directory"
+            placeholder="Search by specialization or keywords..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-14 pr-6 py-5 bg-white border border-brand-navy/10 rounded-full focus:border-brand-orange outline-none shadow-sm transition-all text-brand-navy"
+            leftIcon={<Search size={18} />}
+            className="max-w-md"
           />
         </div>
 
         {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="h-64 bg-brand-navy/5 animate-pulse rounded-[2.5rem]" />
+              <div key={i} className="h-64 bg-brand-navy/5 animate-pulse rounded-2xl" />
             ))}
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredTeams.map((team) => (
-              <motion.div
-                layout
+              <Card 
                 key={team.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="group bg-white p-10 rounded-[3rem] border border-brand-navy/5 hover:border-brand-orange/30 hover:shadow-2xl transition-all cursor-pointer flex flex-col justify-between relative"
+                className="flex flex-col justify-between p-8 group cursor-pointer hover:border-brand-orange/30 transition-all shadow-sm"
                 onClick={() => navigate(`/teams/${team.id}`)}
               >
                 <div>
-                  <div className="w-14 h-14 bg-brand-navy/5 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-orange group-hover:text-white transition-colors">
-                    <Users className="w-7 h-7" />
+                  <div className="w-12 h-12 bg-brand-navy/5 rounded-xl flex items-center justify-center mb-8 text-brand-navy group-hover:bg-brand-orange group-hover:text-white transition-all">
+                    <Users size={24} />
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-brand-orange transition-colors">{team.name}</h3>
-                  <p className="text-brand-navy/60 text-sm line-clamp-3 mb-8 font-sans leading-relaxed">
+                  <h3 className="text-xl font-bold mb-3 text-brand-navy group-hover:text-brand-orange transition-colors">{team.name}</h3>
+                  <p className="text-sm text-brand-navy/60 line-clamp-3 mb-8 leading-relaxed font-light">
                     {team.description}
                   </p>
                 </div>
 
-                <div className="pt-6 border-t border-brand-navy/5 flex items-center justify-between">
-                  <div className="text-xs font-bold text-brand-navy/30 uppercase tracking-widest">
+                <div className="pt-6 border-t border-brand-navy/5 flex items-center justify-between gap-4">
+                  <Badge variant="info">
                     {team.members?.length || 0} Members
-                  </div>
-                  <div className="flex items-center space-x-2 text-brand-navy hover:text-brand-orange font-bold text-xs group/btn">
-                    <span>View Team</span>
-                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </div>
+                  </Badge>
+                  <Button onClick={(e) => { e.stopPropagation(); navigate(`/teams/${team.id}`); }} variant="ghost" size="sm" className="hover:bg-brand-navy hover:text-white" rightIcon={<ArrowRight size={14} />}>
+                    Profile
+                  </Button>
                 </div>
-              </motion.div>
+              </Card>
             ))}
           </div>
         )}
 
         {!loading && filteredTeams.length === 0 && (
-          <div className="py-24 text-center">
-            <h3 className="text-2xl font-bold mb-2">No teams found.</h3>
-            <p className="text-brand-navy/40">Try a different search term.</p>
+          <div className="py-24 text-center border-2 border-dashed border-brand-navy/10 rounded-2xl">
+            <p className="text-brand-navy/30 text-lg italic">No specialized groups found.</p>
           </div>
         )}
       </div>

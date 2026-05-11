@@ -3,11 +3,13 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { labService } from '../services/api';
 import { ResearchLab, Team } from '../types';
 import { motion } from 'motion/react';
-import { Building, Users, ChevronLeft, ArrowUpRight, Globe, Mail, MapPin, FlaskConical } from 'lucide-react';
+import { Building, Users, ChevronLeft, ArrowUpRight, Globe, Mail, MapPin, FlaskConical, Plus } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const LabDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [lab, setLab] = useState<(ResearchLab & { groups?: Team[] }) | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -107,7 +109,18 @@ const LabDetails: React.FC = () => {
 
             {/* Specialized Groups */}
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-brand-navy px-4">Research Units</h2>
+              <div className="flex items-center justify-between px-4">
+                <h2 className="text-3xl font-bold text-brand-navy">Research Units</h2>
+                {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
+                  <button
+                    onClick={() => navigate(`/teams/create?lab_id=${lab.id}`)}
+                    className="flex items-center gap-2 bg-brand-orange text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:shadow-xl transition-all active:scale-95 shadow-lg shadow-brand-orange/20"
+                  >
+                    <Plus size={16} />
+                    <span>Create Unit</span>
+                  </button>
+                )}
+              </div>
               <div className="grid md:grid-cols-2 gap-8">
                 {lab.groups?.map((group, i) => (
                   <motion.div

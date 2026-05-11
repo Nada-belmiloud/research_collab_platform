@@ -7,10 +7,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Crucial for cookie-based auth
+  withCredentials: true,
 });
-
-// Request interceptor removed as we now rely on HttpOnly cookies
 
 export const authService = {
   login: (data: any) => api.post('/auth/login', data),
@@ -29,15 +27,15 @@ export const authService = {
 
 export const projectService = {
   getAll: (params?: { skip?: number, limit?: number, group_id?: number, lab_id?: number, search?: string, status?: string }) =>
-  api.get('/projects/', { params }),
+    api.get('/projects/', { params }),
   getById: (id: number | string) => api.get(`/projects/${id}/`),
-  createProject: (data: any) => api.post('/projects/', data),
-  updateProject: (id: number, data: any) => api.put(`/projects/${id}`, data),
-  deleteProject: (id: number) => api.delete(`/projects/${id}`),
-  apply: (projectId: number, cover_letter: string) =>
+  create: (data: any) => api.post('/projects/', data),
+  update: (id: number, data: any) => api.put(`/projects/${id}`, data),
+  delete: (id: number) => api.delete(`/projects/${id}`),
+  apply: (projectId: number, motivation: string) =>
     api.post('/project-applications/', {
       project_id: projectId,
-      cover_letter: cover_letter,
+      motivation: motivation,
     }),
   getMyProjects: () => api.get('/projects/', { params: { my_projects_only: true } })
 };
@@ -45,6 +43,15 @@ export const projectService = {
 export const userService = {
   updateProfile: (id: number, data: any) => api.put(`/users/${id}`, data),
   updateProfilePicture: (data: FormData) => api.put('/users/profile-picture', data),
+};
+
+export const adminService = {
+  getUsers: (params: { skip?: number, limit?: number, role?: string, search?: string }) => 
+    api.get('/users/paged', { params }),
+  createUser: (data: any) => api.post('/users/', data),
+  updateUser: (id: number, data: any) => api.put(`/users/${id}`, data),
+  deleteUser: (id: number) => api.delete(`/users/${id}`),
+  getStats: () => api.get('/analytics/system-stats'),
 };
 
 export const cvService = {
@@ -96,6 +103,9 @@ export const participantService = {
 export const labService = {
   getAll: (skip?: number, limit?: number) => api.get('/labs/', { params: { skip, limit } }),
   getById: (id: number) => api.get(`/labs/${id}`),
+  create: (data: any) => api.post('/labs/', data),
+  update: (id: number, data: any) => api.put(`/labs/${id}`, data),
+  delete: (id: number) => api.delete(`/labs/${id}`),
 };
 
 export default api;

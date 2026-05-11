@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '../types';
+import { User, LoginCredentials, RegisterData } from '../types';
 import api from '../services/api';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (credentials: any) => Promise<void>;
-  register: (data: any) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => void;
 }
 
@@ -31,13 +31,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUser();
   }, []);
 
-  const login = async ({ email, password }: any) => {
+  const login = async ({ email, password }: LoginCredentials) => {
     const res = await api.post("/auth/login", { email, password });
     // User data is returned, and cookies are set by the browser automatically
     setUser(res.data);
   };
 
-  const register = async (data: any) => {
+  const register = async (data: RegisterData) => {
     const res = await api.post("/auth/signup", {
       email: data.email,
       full_name: data.full_name,

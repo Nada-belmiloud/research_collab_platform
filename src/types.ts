@@ -144,3 +144,60 @@ export interface ProjectParticipant {
   participant_role: 'LEAD' | 'MEMBER' | 'REVIEWER';
   joined_at: string;
 }
+
+export interface LoginCredentials {
+  email: string;
+  password?: string;
+}
+
+export interface RegisterData {
+  email: string;
+  full_name: string;
+  password?: string;
+}
+
+export interface Notification {
+  id: number;
+  user_id: number;
+  type: string;
+  title: string;
+  content: string;
+  is_read: boolean;
+  link?: string;
+  created_at: string;
+}
+
+export interface NotificationListResponse {
+  items: Notification[];
+  total: number;
+  unread_count: number;
+}
+
+export interface UserSettings {
+  id: number;
+  user_id: number;
+  email_notifications: boolean;
+  app_notifications: boolean;
+  theme: 'light' | 'dark';
+  language: string;
+}
+
+export interface ActivityDatapoint {
+  date: string;
+  count: number;
+}
+
+export interface SystemStats {
+  total_users: number;
+  total_labs: number;
+  total_projects: number;
+  total_publications: number;
+  total_applications: number;
+  pending_applications: number;
+}
+
+export interface AnalyticsResponse {
+  stats: SystemStats;
+  user_growth: ActivityDatapoint[];
+  application_trends: ActivityDatapoint[];
+}
