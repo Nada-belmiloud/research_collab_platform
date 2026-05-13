@@ -1,4 +1,3 @@
-
 export type UserRole = "student" | "teacher";
 
 export interface User {
@@ -48,10 +47,12 @@ export interface Post {
 }
 
 export interface Application {
-  id: string;
-  postId: string;
-  applicantId: string;
-  applicantName: string;
-  status: "pending" | "accepted" | "rejected";
-  time: string;
+  id: number;
+  post_id: number;
+  applicant_id: number;
+  status: string;
+  cover_letter: string;
+  applied_at: string;
+  applicant_first_name: string;
+  applicant_last_name: string;
 }

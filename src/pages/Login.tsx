@@ -1,17 +1,40 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, ArrowRight } from "lucide-react";
+import { auth } from "../lib/api";
+
+type LoginRole = "student" | "researcher";
 
 export default function Login() {
   const navigate = useNavigate();
+  const initialRole = localStorage.getItem("role") === "researcher" ? "researcher" : "student";
+  const [role, setRole] = useState<LoginRole>(initialRole);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("role", email.includes("teacher") ? "teacher" : "student");
-    window.location.href = "/explore";
+    if (loading) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const resp = await auth.login(role, email, password);
+      if (!resp.success) {
+        setError(resp.message || 'Login failed');
+        return;
+      }
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("role", resp.data?.user?.role ?? role);
+      navigate('/explore');
+    } catch (err: any) {
+      const apiMessage = err?.response?.data?.message;
+      setError(apiMessage || err?.message || 'Login request failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -32,13 +55,33 @@ export default function Login() {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
+              <label className="text-xs font-bold text-[#0e4971] uppercase tracking-widest pl-1">Account Type</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRole("student")}
+                  className={`rounded-xl border py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${role === "student" ? "border-[#0e4971] bg-[#0e4971]/5 text-[#0e4971]" : "border-[#0e4971]/10 bg-[#f8f7f4] text-[#5b86a2]"}`}
+                >
+                  Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("researcher")}
+                  className={`rounded-xl border py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${role === "researcher" ? "border-[#0e4971] bg-[#0e4971]/5 text-[#0e4971]" : "border-[#0e4971]/10 bg-[#f8f7f4] text-[#5b86a2]"}`}
+                >
+                  Researcher
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <label className="text-xs font-bold text-[#0e4971] uppercase tracking-widest pl-1">ENSIA Email</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5b86a2]" size={18} />
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(email)}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@ensia.edu.dz"
                   className="w-full bg-[#f8f7f4] border border-[#0e4971]/10 rounded-xl py-3 pl-12 pr-4 outline-none focus:border-[#0e4971] transition-colors"
                   required
@@ -49,7 +92,7 @@ export default function Login() {
             <div className="space-y-2">
               <div className="flex justify-between items-center pl-1">
                 <label className="text-xs font-bold text-[#0e4971] uppercase tracking-widest">Password</label>
-                <a href="#" className="text-[10px] text-[#5b86a2] hover:text-[#0e4971]">Forgot?</a>
+                <button type="button" onClick={(ev) => ev.preventDefault()} className="text-[10px] text-[#5b86a2] hover:text-[#0e4971]">Forgot?</button>
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5b86a2]" size={18} />
@@ -66,10 +109,12 @@ export default function Login() {
 
             <button
               type="submit"
-              className="w-full bg-[#0e4971] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#0a3a5c] transition-all"
+              disabled={loading}
+              className={`w-full ${loading ? 'opacity-60 cursor-not-allowed' : ''} bg-[#0e4971] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#0a3a5c] transition-all`}
             >
-              Log in <ArrowRight size={18} />
+              {loading ? 'Signing in…' : 'Log in'} <ArrowRight size={18} />
             </button>
+            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
           </form>
         </div>
 

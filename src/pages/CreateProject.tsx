@@ -2,10 +2,16 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Briefcase, Globe, Lock, Send, Sparkles, Users, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getCurrentUser, projects } from "../lib/api";
+import { SkillChipsInput } from "../components/SkillChipsInput";
 
 export default function CreateProject() {
   const navigate = useNavigate();
+  const currentUser = getCurrentUser();
+  const canCreateProject = currentUser?.role === "researcher";
   const [privacy, setPrivacy] = useState<"public" | "private">("public");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Project State
   const [projectTitle, setProjectTitle] = useState("");
@@ -16,7 +22,8 @@ export default function CreateProject() {
   const [applicationDeadline, setApplicationDeadline] = useState("");
   const [projectDesc, setProjectDesc] = useState("");
   const [backgroundReqs, setBackgroundReqs] = useState("");
-  const [requiredSkills, setRequiredSkills] = useState("");
+  const [requiredSkillChips, setRequiredSkillChips] = useState<string[]>([]);
+  const [requiredSkillDraft, setRequiredSkillDraft] = useState("");
   const [interests, setInterests] = useState("");
   const [references, setReferences] = useState("");
   const [masterDegrees, setMasterDegrees] = useState("");
@@ -27,10 +34,107 @@ export default function CreateProject() {
   const [stipend, setStipend] = useState("");
   const [collaborationType, setCollaborationType] = useState<"student" | "teacher" | "both">("both");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const parseDeadline = (value: string) => {
+    if (!value.trim()) return null;
+    if (value.includes('T')) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      return date.toISOString().slice(0, 19).replace('T', ' ');
+    }
+
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/);
+    if (!match) return value;
+    const [, day, month, year, hour, minute] = match;
+    return `${year}-${month}-${day} ${hour}:${minute}:00`;
+  };
+
+  const mapDurationMonths = (value: string) => {
+    switch (value) {
+      case "1-3-months": return 3;
+      case "3-6-months": return 6;
+      case "6-12-months": return 12;
+      case "1-2-years": return 24;
+      case "ongoing": return null;
+      default: return null;
+    }
+  };
+
+  const addProjectSkill = () => {
+    const s = requiredSkillDraft.trim();
+    if (!s) return;
+    if (requiredSkillChips.some((c) => c.toLowerCase() === s.toLowerCase())) {
+      setRequiredSkillDraft("");
+      return;
+    }
+    setRequiredSkillChips((prev) => [...prev, s]);
+    setRequiredSkillDraft("");
+  };
+
+  const removeProjectSkill = (skill: string) => {
+    setRequiredSkillChips((prev) => prev.filter((x) => x !== skill));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate submission
-    navigate("/projects");
+    if (loading) return;
+
+    if (!canCreateProject) {
+      setError("Only researcher accounts can create projects.");
+      return;
+    }
+
+    if (requiredSkillChips.length === 0) {
+      setError("Add at least one required skill.");
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      const statusValue = privacy === 'public' ? 'open' : 'draft';
+      const projectNotes = [
+        projectDesc.trim(),
+        durationDescription.trim() ? `Duration details: ${durationDescription.trim()}` : "",
+        projectDirector.trim() ? `Project director: ${projectDirector.trim()}` : "",
+      ].filter(Boolean).join("\n\n");
+
+      const payload = {
+        title: projectTitle.trim(),
+        category: projectCategory || undefined,
+        duration_months: mapDurationMonths(projectDuration),
+        timeframe: timeframe || undefined,
+        application_deadline: parseDeadline(applicationDeadline),
+        description: projectNotes || undefined,
+        background_requirements: backgroundReqs || undefined,
+        required_skills_text: requiredSkillChips.join(", "),
+        interests_text: interests || undefined,
+        references_text: references || undefined,
+        master_degrees_text: masterDegrees || undefined,
+        internship_season: internshipSeason || undefined,
+        minimum_gpa: minimumGPA ? Number(minimumGPA) : null,
+        phd_funding: phdFunding !== '' && phdFunding !== 'no',
+        stipend: stipend.trim().length > 0 && stipend.toLowerCase() !== 'no',
+        status: statusValue as 'draft' | 'open' | 'closed' | 'archived',
+      };
+
+      if (!payload.title) {
+        setError('Title is required');
+        return;
+      }
+
+      const response = await projects.create(payload);
+      if (!response.success) {
+        setError(response.message || 'Project creation failed');
+        return;
+      }
+
+      navigate('/projects');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Project creation failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,6 +150,11 @@ export default function CreateProject() {
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           {/* Section 1: Basic Information */}
           <div className="bg-white rounded-[32px] border border-[#0e4971]/10 p-8 space-y-6 shadow-xl shadow-[#0e4971]/5">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#0e4971]/10">
@@ -133,7 +242,7 @@ export default function CreateProject() {
                 type="text"
                 value={applicationDeadline}
                 onChange={(e) => setApplicationDeadline(e.target.value)}
-                placeholder="e.g. 15/02/2025 23:59"
+                placeholder="e.g. 15/02/2025 23:59 or 2025-02-15T23:59"
                 className="w-full bg-[#f8f7f4] border border-[#0e4971]/5 rounded-3xl py-4 px-6 outline-none focus:border-[#0e4971] transition-colors font-medium text-[#0e4971]"
                 required
               />
@@ -171,17 +280,16 @@ export default function CreateProject() {
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-[#0e4971] uppercase tracking-widest pl-1">Required Skills *</label>
-              <textarea
-                value={requiredSkills}
-                onChange={(e) => setRequiredSkills(e.target.value)}
-                rows={3}
-                placeholder="What are the skills you're looking for this project? (e.g. Python, NLP, PyTorch)"
-                className="w-full bg-[#f8f7f4] border border-[#0e4971]/5 rounded-3xl py-4 px-6 outline-none focus:border-[#0e4971] transition-colors font-medium text-[#0e4971] resize-none"
-                required
-              />
-            </div>
+            <SkillChipsInput
+              label="Required skills *"
+              hint="Add one skill at a time — they are saved as a comma-separated list on the project."
+              chips={requiredSkillChips}
+              draft={requiredSkillDraft}
+              onDraftChange={setRequiredSkillDraft}
+              onAdd={addProjectSkill}
+              onRemove={removeProjectSkill}
+              disabled={loading}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -345,9 +453,10 @@ export default function CreateProject() {
 
             <button
               type="submit"
-              className="w-full md:w-auto bg-[#f37e22] text-white px-12 py-4 rounded-full font-bold shadow-lg shadow-[#f37e22]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              disabled={loading || !canCreateProject}
+              className="w-full md:w-auto bg-[#f37e22] text-white px-12 py-4 rounded-full font-bold shadow-lg shadow-[#f37e22]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Create Project <Send size={18} />
+              {loading ? "Creating…" : "Create Project"} <Send size={18} />
             </button>
           </div>
         </form>
