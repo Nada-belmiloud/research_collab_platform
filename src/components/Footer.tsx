@@ -15,9 +15,9 @@ export default function Footer() {
               Discover, connect, and publish with the community.
             </p>
             <div className="mt-6 flex gap-4">
-              <a href="#" className="text-[#0e4971] hover:opacity-70 transition-opacity"><Github size={20} /></a>
-              <a href="#" className="text-[#0e4971] hover:opacity-70 transition-opacity"><Linkedin size={20} /></a>
-              <a href="#" className="text-[#0e4971] hover:opacity-70 transition-opacity"><Twitter size={20} /></a>
+              <button type="button" onClick={(e) => e.preventDefault()} className="text-[#0e4971] hover:opacity-70 transition-opacity"><Github size={20} /></button>
+              <button type="button" onClick={(e) => e.preventDefault()} className="text-[#0e4971] hover:opacity-70 transition-opacity"><Linkedin size={20} /></button>
+              <button type="button" onClick={(e) => e.preventDefault()} className="text-[#0e4971] hover:opacity-70 transition-opacity"><Twitter size={20} /></button>
             </div>
           </div>
 

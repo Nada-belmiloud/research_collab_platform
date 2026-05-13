@@ -2,6 +2,8 @@ import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate, Link } from "react-router-dom";
 import { GraduationCap, Users } from "lucide-react";
+import { auth } from "../lib/api";
+import type { FormEvent, ReactNode, DragEvent } from "react";
 
 /* ─────────────────────────────────────────────────────────────
    Types
@@ -19,7 +21,7 @@ const BACKEND_URL = "http://localhost:5000";
 ───────────────────────────────────────────────────────────── */
 function Field({
   label, required = false, error = "", children,
-}: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
+}: { label: string; required?: boolean; error?: string; children: ReactNode }) {
   return (
     <div>
       <label className="block text-[11px] font-bold text-[#5b86a2] uppercase tracking-widest mb-1.5">
@@ -109,6 +111,18 @@ function Stepper({ step }: { step: StepId }) {
   );
 }
 
+function Card({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="bg-white border border-[#0e4971]/10 rounded-2xl p-6 mb-4 shadow-sm">
+      <div className="flex items-center justify-between mb-5 pb-3 border-b border-[#0e4971]/8">
+        <h3 className="font-serif text-[17px] font-bold text-[#0e4971]">{title}</h3>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────
    Main component
 ───────────────────────────────────────────────────────────── */
@@ -116,6 +130,11 @@ export default function Signup() {
   const navigate  = useNavigate();
   const dropRef   = useRef<HTMLDivElement>(null);
   const fileRef   = useRef<HTMLInputElement>(null);
+
+  const makeId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+
+  type EducationItem = { id: string; degree: string; field: string; school: string; start_year: string; end_year: string };
+  type ExperienceItem = { id: string; role: string; company: string; start_date: string; end_date: string; description: string };
 
   const [step, setStep]       = useState<StepId>("role");
   const [role, setRole]       = useState<Role | null>(null);
@@ -131,15 +150,15 @@ export default function Signup() {
     technical_skills: [] as string[],
     soft_skills:       [] as string[],
     languages:         [] as string[],
-    education: [] as { degree:string; field:string; school:string; start_year:string; end_year:string }[],
-    experience: [] as { role:string; company:string; start_date:string; end_date:string; description:string }[],
+    education: [] as EducationItem[],
+    experience: [] as ExperienceItem[],
     password: "", confirmPassword: "",
   });
 
   /* drag / drop */
-  const onDragOver  = useCallback((e: React.DragEvent) => { e.preventDefault(); setDrag(true); }, []);
+  const onDragOver  = useCallback((e: DragEvent) => { e.preventDefault(); setDrag(true); }, []);
   const onDragLeave = useCallback(() => setDrag(false), []);
-  const onDrop      = useCallback((e: React.DragEvent) => {
+  const onDrop      = useCallback((e: DragEvent) => {
     e.preventDefault(); setDrag(false);
     const f = e.dataTransfer.files[0];
     if (f?.type === "application/pdf") setFile(f);
@@ -198,12 +217,14 @@ export default function Signup() {
 
   /* form helpers */
   const set     = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
-  const updEdu  = (i: number, k: string, v: string) => setForm(f => { const a = [...f.education];  a[i] = {...a[i],[k]:v}; return {...f,education:a}; });
-  const remEdu  = (i: number) => setForm(f => ({ ...f, education:  f.education.filter((_,j)=>j!==i) }));
-  const addEdu  = () => setForm(f => ({ ...f, education:  [...f.education,  {degree:"",field:"",school:"",start_year:"",end_year:""}] }));
-  const updExp  = (i: number, k: string, v: string) => setForm(f => { const a = [...f.experience]; a[i] = {...a[i],[k]:v}; return {...f,experience:a}; });
-  const remExp  = (i: number) => setForm(f => ({ ...f, experience: f.experience.filter((_,j)=>j!==i) }));
-  const addExp  = () => setForm(f => ({ ...f, experience: [...f.experience, {role:"",company:"",start_date:"",end_date:"",description:""}] }));
+  const updEdu  = (id: string, k: keyof EducationItem, v: string) => setForm(f => ({ ...f, education: f.education.map(item => item.id === id ? { ...item, [k]: v } : item) }));
+  const remEdu  = (id: string) => setForm(f => ({ ...f, education: f.education.filter(item => item.id !== id) }));
+  const addEdu  = () => setForm(f => ({ ...f, education: [...f.education, { id: makeId(), degree:"",field:"",school:"",start_year:"",end_year:"" }] }));
+  const updExp  = (id: string, k: keyof ExperienceItem, v: string) => setForm(f => ({ ...f, experience: f.experience.map(item => item.id === id ? { ...item, [k]: v } : item) }));
+  const remExp  = (id: string) => setForm(f => ({ ...f, experience: f.experience.filter(item => item.id !== id) }));
+  const addExp  = () => setForm(f => ({ ...f, experience: [...f.experience, { id: makeId(), role:"",company:"",start_date:"",end_date:"",description:"" }] }));
+
+  const [loading, setLoading] = useState(false);
 
   function validate() {
     const e: Record<string,string> = {};
@@ -217,25 +238,41 @@ export default function Signup() {
     return Object.keys(e).length === 0;
   }
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
-    if (validate()) {
+    if (loading) return;
+    if (!validate()) return;
+
+    setLoading(true);
+    setApiErr("");
+    try {
+      const nameParts = form.name.trim().split(/\s+/).filter(Boolean);
+      const emailPrefix = form.email.trim().split("@")[0] || "user";
+      const first_name = nameParts[0] || emailPrefix;
+      const last_name = nameParts.slice(1).join(" ") || emailPrefix || "User";
+      const backendRole = role === "teacher" ? "researcher" : "student";
+      const result = await auth.register(backendRole, {
+        first_name,
+        last_name,
+        email: form.email,
+        password: form.password,
+        institution: form.location || undefined,
+      });
+
+      if (!result.success) {
+        setApiErr(result.message || "Registration failed");
+        return;
+      }
+
       localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("role", role || "student");
-      setStep("done");
+      localStorage.setItem("role", backendRole);
+      navigate("/explore", { replace: true });
+    } catch (err: any) {
+      setApiErr(err?.message || "Registration request failed");
+    } finally {
+      setLoading(false);
     }
   }
-
-  /* ── shared card wrapper ── */
-  const Card = ({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) => (
-    <div className="bg-white border border-[#0e4971]/10 rounded-2xl p-6 mb-4 shadow-sm">
-      <div className="flex items-center justify-between mb-5 pb-3 border-b border-[#0e4971]/8">
-        <h3 className="font-serif text-[17px] font-bold text-[#0e4971]">{title}</h3>
-        {action}
-      </div>
-      {children}
-    </div>
-  );
 
   const addBtn = (onClick: () => void) => (
     <button type="button" onClick={onClick}
@@ -431,6 +468,13 @@ export default function Signup() {
           {/* ════ STEP: REVIEW ════ */}
           {step === "review" && (
             <motion.div key="review" initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}>
+              {apiErr && (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-6 flex gap-2.5">
+                  <span className="text-red-400 text-lg leading-none mt-0.5">!</span>
+                  <p className="text-[13px] text-red-700">{apiErr}</p>
+                </div>
+              )}
+
               {file && (
                 <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-6 flex gap-2 items-center">
                   <span className="text-green-500 text-base">✓</span>
@@ -511,29 +555,29 @@ export default function Signup() {
                     <p className="text-[13px] text-[#5b86a2]/50 text-center py-3">No entries yet — click Add</p>
                   )}
                   {form.education.map((e, i) => (
-                    <div key={i} className="relative bg-[#0e4971]/3 border border-[#0e4971]/8 rounded-xl p-4 mb-3">
-                      <button type="button" onClick={() => remEdu(i)}
+                    <div key={e.id} className="relative bg-[#0e4971]/3 border border-[#0e4971]/8 rounded-xl p-4 mb-3">
+                      <button type="button" onClick={() => remEdu(e.id)}
                         className="absolute top-2.5 right-3 text-red-300 hover:text-red-500 text-lg transition-colors">×</button>
                       <div className="grid grid-cols-2 gap-3">
                         <Field label="Degree">
-                          <input value={e.degree} onChange={x => updEdu(i,"degree",x.target.value)} placeholder="B.Sc. / M.Sc. / PhD"
+                          <input value={e.degree} onChange={x => updEdu(e.id,"degree",x.target.value)} placeholder="B.Sc. / M.Sc. / PhD"
                             className="w-full bg-white border border-[#0e4971]/12 rounded-xl py-2 px-3 text-[13px] text-[#0e4971] outline-none focus:border-[#f37e22]" />
                         </Field>
                         <Field label="Field">
-                          <input value={e.field} onChange={x => updEdu(i,"field",x.target.value)} placeholder="Artificial Intelligence"
+                          <input value={e.field} onChange={x => updEdu(e.id,"field",x.target.value)} placeholder="Artificial Intelligence"
                             className="w-full bg-white border border-[#0e4971]/12 rounded-xl py-2 px-3 text-[13px] text-[#0e4971] outline-none focus:border-[#f37e22]" />
                         </Field>
                         <Field label="University">
-                          <input value={e.school} onChange={x => updEdu(i,"school",x.target.value)} placeholder="ENSIA"
+                          <input value={e.school} onChange={x => updEdu(e.id,"school",x.target.value)} placeholder="ENSIA"
                             className="w-full bg-white border border-[#0e4971]/12 rounded-xl py-2 px-3 text-[13px] text-[#0e4971] outline-none focus:border-[#f37e22]" />
                         </Field>
                         <div className="grid grid-cols-2 gap-2">
                           <Field label="Start">
-                            <input value={e.start_year} onChange={x => updEdu(i,"start_year",x.target.value)} placeholder="2021"
+                            <input value={e.start_year} onChange={x => updEdu(e.id,"start_year",x.target.value)} placeholder="2021"
                               className="w-full bg-white border border-[#0e4971]/12 rounded-xl py-2 px-3 text-[13px] text-[#0e4971] outline-none focus:border-[#f37e22]" />
                           </Field>
                           <Field label="End">
-                            <input value={e.end_year} onChange={x => updEdu(i,"end_year",x.target.value)} placeholder="2025"
+                            <input value={e.end_year} onChange={x => updEdu(e.id,"end_year",x.target.value)} placeholder="2025"
                               className="w-full bg-white border border-[#0e4971]/12 rounded-xl py-2 px-3 text-[13px] text-[#0e4971] outline-none focus:border-[#f37e22]" />
                           </Field>
                         </div>
@@ -548,32 +592,32 @@ export default function Signup() {
                     <p className="text-[13px] text-[#5b86a2]/50 text-center py-3">No entries yet — click Add</p>
                   )}
                   {form.experience.map((e, i) => (
-                    <div key={i} className="relative bg-[#0e4971]/3 border border-[#0e4971]/8 rounded-xl p-4 mb-3">
-                      <button type="button" onClick={() => remExp(i)}
+                    <div key={e.id} className="relative bg-[#0e4971]/3 border border-[#0e4971]/8 rounded-xl p-4 mb-3">
+                      <button type="button" onClick={() => remExp(e.id)}
                         className="absolute top-2.5 right-3 text-red-300 hover:text-red-500 text-lg transition-colors">×</button>
                       <div className="grid grid-cols-2 gap-3">
                         <Field label={role === "teacher" ? "Position" : "Role"}>
-                          <input value={e.role} onChange={x => updExp(i,"role",x.target.value)}
+                          <input value={e.role} onChange={x => updExp(e.id,"role",x.target.value)}
                             placeholder={role === "teacher" ? "Associate Professor" : "Research Intern"}
                             className="w-full bg-white border border-[#0e4971]/12 rounded-xl py-2 px-3 text-[13px] text-[#0e4971] outline-none focus:border-[#f37e22]" />
                         </Field>
                         <Field label={role === "teacher" ? "Institution / Lab" : "Company / Lab"}>
-                          <input value={e.company} onChange={x => updExp(i,"company",x.target.value)}
+                          <input value={e.company} onChange={x => updExp(e.id,"company",x.target.value)}
                             placeholder={role === "teacher" ? "ENSIA – NLP Lab" : "CERIST"}
                             className="w-full bg-white border border-[#0e4971]/12 rounded-xl py-2 px-3 text-[13px] text-[#0e4971] outline-none focus:border-[#f37e22]" />
                         </Field>
                         <Field label="Start">
-                          <input value={e.start_date} onChange={x => updExp(i,"start_date",x.target.value)} placeholder="Sep 2020"
+                          <input value={e.start_date} onChange={x => updExp(e.id,"start_date",x.target.value)} placeholder="Sep 2020"
                             className="w-full bg-white border border-[#0e4971]/12 rounded-xl py-2 px-3 text-[13px] text-[#0e4971] outline-none focus:border-[#f37e22]" />
                         </Field>
                         <Field label="End">
-                          <input value={e.end_date} onChange={x => updExp(i,"end_date",x.target.value)} placeholder="Present"
+                          <input value={e.end_date} onChange={x => updExp(e.id,"end_date",x.target.value)} placeholder="Present"
                             className="w-full bg-white border border-[#0e4971]/12 rounded-xl py-2 px-3 text-[13px] text-[#0e4971] outline-none focus:border-[#f37e22]" />
                         </Field>
                       </div>
                       <div className="mt-3">
                         <Field label="Description">
-                          <textarea value={e.description} onChange={x => updExp(i,"description",x.target.value)}
+                          <textarea value={e.description} onChange={x => updExp(e.id,"description",x.target.value)}
                             placeholder="Summary of responsibilities…"
                             className="w-full bg-white border border-[#0e4971]/12 rounded-xl py-2 px-3 text-[13px] text-[#0e4971] outline-none focus:border-[#f37e22] resize-y min-h-[60px]" />
                         </Field>
@@ -603,9 +647,9 @@ export default function Signup() {
                     className="border border-[#0e4971]/20 text-[#5b86a2] font-medium text-[14px] py-3.5 px-6 rounded-full hover:border-[#0e4971]/40 hover:text-[#0e4971] transition-all">
                     ← Back
                   </button>
-                  <button type="submit"
+                  <button type="submit" disabled={loading}
                     className="flex-1 bg-[#f37e22] text-white font-semibold text-[15px] py-3.5 rounded-full shadow-lg shadow-[#f37e22]/20 hover:opacity-90 transition-all">
-                    Create my account →
+                    {loading ? "Creating…" : "Create my account →"}
                   </button>
                 </div>
               </form>

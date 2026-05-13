@@ -1,17 +1,31 @@
 import { Link } from "react-router-dom";
-import { Search, User, LogOut, Menu, X, BookOpen, Users, Compass } from "lucide-react";
-import { useState } from "react";
+import { Search, User, LogOut, Menu, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { auth, getCurrentUser } from "../lib/api";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("isLoggedIn") === "true");
-  const [role, setRole] = useState(localStorage.getItem("role") || "student");
+  const [, setAuthEpoch] = useState(0);
 
-  const handleLogout = () => {
+  useEffect(() => {
+    const onAuth = () => setAuthEpoch((n) => n + 1);
+    window.addEventListener("auth-changed", onAuth);
+    return () => window.removeEventListener("auth-changed", onAuth);
+  }, []);
+
+  const currentUser = getCurrentUser();
+  const isLoggedIn = Boolean(currentUser);
+  const role = currentUser?.role ?? "student";
+
+  const handleLogout = async () => {
+    try {
+      await auth.logout();
+    } catch {
+      // Clear local state even if the backend logout request fails.
+    }
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("role");
-    setIsLoggedIn(false);
     window.location.href = "/";
   };
 
@@ -33,17 +47,14 @@ export default function Navbar() {
               <>
                 <Link to="/explore" className="text-sm font-medium text-[#5b86a2] hover:text-[#0e4971] transition-colors">Explore</Link>
                 <Link to="/my-posts" className="text-sm font-medium text-[#5b86a2] hover:text-[#0e4971] transition-colors">My Posts</Link>
+                <Link to="/projects" className="text-sm font-medium text-[#5b86a2] hover:text-[#0e4971] transition-colors">Projects</Link>
               </>
-            )}
-            {isLoggedIn && role === "teacher" && (
-              <Link to="/projects" className="text-sm font-medium text-[#5b86a2] hover:text-[#0e4971] transition-colors">Projects</Link>
             )}
             <Link to="/about" className="text-sm font-medium text-[#5b86a2] hover:text-[#0e4971] transition-colors">About</Link>
-            {isLoggedIn && role === "teacher" && (
-              <>
-                <Link to="/ams" className="text-sm font-medium text-[#5b86a2] hover:text-[#0e4971] transition-colors">Applicants</Link>
-                <Link to="/ranking" className="text-sm font-medium text-[#5b86a2] hover:text-[#0e4971] transition-colors">Ranking</Link>
-              </>
+            {isLoggedIn && role === "researcher" && (
+              <Link to="/applications" className="text-sm font-medium text-[#5b86a2] hover:text-[#0e4971] transition-colors">
+                Applications
+              </Link>
             )}
           </div>
 
@@ -105,6 +116,11 @@ export default function Navbar() {
               {isLoggedIn && (
                 <>
                   <Link to="/explore" className="block px-3 py-2 rounded-md text-base font-medium text-[#0e4971] hover:bg-[#0e4971]/5">Explore</Link>
+                  <Link to="/my-posts" className="block px-3 py-2 rounded-md text-base font-medium text-[#0e4971] hover:bg-[#0e4971]/5">My Posts</Link>
+                  <Link to="/projects" className="block px-3 py-2 rounded-md text-base font-medium text-[#0e4971] hover:bg-[#0e4971]/5">Projects</Link>
+                  {role === "researcher" && (
+                    <Link to="/applications" className="block px-3 py-2 rounded-md text-base font-medium text-[#0e4971] hover:bg-[#0e4971]/5">Applications</Link>
+                  )}
                 </>
               )}
               <Link to="/about" className="block px-3 py-2 rounded-md text-base font-medium text-[#0e4971] hover:bg-[#0e4971]/5">About</Link>
@@ -115,7 +131,7 @@ export default function Navbar() {
                     <Link to="/signup" className="w-full text-center py-2 text-sm font-medium text-white bg-[#0e4971] rounded-full">Sign up</Link>
                   </>
                 ) : (
-                  <button className="w-full text-center py-2 text-sm font-medium text-white bg-[#0e4971] rounded-full">Log out</button>
+                  <button onClick={handleLogout} className="w-full text-center py-2 text-sm font-medium text-white bg-[#0e4971] rounded-full">Log out</button>
                 )}
               </div>
             </div>
